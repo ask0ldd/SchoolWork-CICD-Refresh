@@ -29,6 +29,9 @@ jobs:
       - name: Run Angular tests
         run: npm run test:ci
 
+      - name: Run Angular coverage
+        run: npm run coverage:ci
+
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
