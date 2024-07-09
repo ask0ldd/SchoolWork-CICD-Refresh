@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x] # the two LTS releases that are not close to reaching EOL
       fail-fast: false # This prevents other jobs from canceling if one fails
 
     defaults:
