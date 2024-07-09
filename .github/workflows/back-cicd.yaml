@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
@@ -29,3 +29,25 @@ jobs:
 
       - name: Run Tests
         run: mvn clean test
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: ./back/target/surefire-reports
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >
+            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back
+            -Dsonar.organization=ask0ldd
+            -Dsonar.sources=./back/src/main/java
+            -Dsonar.tests=./back/src/test/java
+            -Dsonar.java.binaries=./back/target/classes/com/openclassrooms/bobapp
+            -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
+            -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
