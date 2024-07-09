@@ -54,7 +54,7 @@ jobs:
           SONAR_HOST_URL: https://sonarcloud.io
         with:
           args: >
-            -Dsonar.projectKey=ask0ldd_p10cicdrefresh
+            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=./front/src
             -Dsonar.javascript.lcov.reportPaths=./front/coverage/bobapp/lcov.info
