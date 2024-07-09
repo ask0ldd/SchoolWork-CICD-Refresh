@@ -45,7 +45,6 @@ jobs:
 
       - name: Build Angular
         run: npm run build --prod
-        #working-directory: ./front
 
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
