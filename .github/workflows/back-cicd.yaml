@@ -24,13 +24,14 @@ jobs:
           java-version: "17"
           distribution: "adopt"
 
-      # Clean the /target folder
-      # Compiles the java source code
-      # Convert the compiled code to a jar and put it into /target
-      # Copies the packaged JAR or WAR file into the local Maven repository (~/.m2/repository)
+      # clean the /target folder
+      # compiles the java source code
+      # convert the compiled code to a jar and put it into /target
+      # copies the packaged JAR or WAR file into the local Maven repository (~/.m2/repository)
       - name: Build with Maven
         run: mvn clean install -DskipTests # so we don't run the tests two times
 
+      # don't need to call mvn jacoco:report since pom xml contains the coverage as a goal
       - name: Run Tests
         run: mvn clean test
 
@@ -55,3 +56,17 @@ jobs:
             -Dsonar.java.binaries=./back/target/classes/com/openclassrooms/bobapp
             -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
+
+      - name: Docker Login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
+
+      - name: Build and Push Docker Image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          docker build -t $DOCKER_USERNAME/bobappback:latest ./back
+          docker push $DOCKER_USERNAME/bobappback:latest
