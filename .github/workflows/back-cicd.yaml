@@ -48,12 +48,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
+          # -Dsonar.java.binaries=./back/target/classes/com/openclassrooms/bobapp
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=./back/src/main/java
             -Dsonar.tests=./back/src/test/java
-            -Dsonar.java.binaries=./back/target/classes/com/openclassrooms/bobapp
+            -Dsonar.java.binaries=./back/target/classes
             -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
 
@@ -68,5 +69,5 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
-          docker build -t $DOCKER_USERNAME/bobappback:latest ./back
+          docker build -t $DOCKER_USERNAME/bobappback:latest .
           docker push $DOCKER_USERNAME/bobappback:latest
