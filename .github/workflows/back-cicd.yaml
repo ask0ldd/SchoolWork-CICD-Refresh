@@ -22,10 +22,14 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: "17"
-          distribution: "temurin"
+          distribution: "adopt"
 
+      # Clean the /target folder
+      # Compiles the java source code
+      # Convert the compiled code to a jar and put it into /target
+      # Copies the packaged JAR or WAR file into the local Maven repository (~/.m2/repository)
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean install -DskipTests # so we don't run the tests two times
 
       - name: Run Tests
         run: mvn clean test

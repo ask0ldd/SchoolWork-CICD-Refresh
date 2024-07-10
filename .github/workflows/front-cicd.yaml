@@ -57,6 +57,5 @@ jobs:
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=./front/src
-            -Dsonar.tests=./front/src
             -Dsonar.javascript.lcov.reportPaths=./front/coverage/bobapp/lcov.info
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
