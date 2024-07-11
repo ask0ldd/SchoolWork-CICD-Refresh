@@ -6,6 +6,8 @@ target/
 node_modules/
 dist/
 coverage/
+composeversions/
+oldworkflows
 
 ### STS ###
 .apt_generated
