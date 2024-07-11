@@ -8,6 +8,7 @@ import { Joke } from '../model/joke.model';
 })
 export class JokesService {
 
+  // private apiUrl = ${process.env.API_URL}
   private pathService = 'api/joke';
 
   private subject: BehaviorSubject<Joke | null> = new BehaviorSubject<Joke | null>(null);
