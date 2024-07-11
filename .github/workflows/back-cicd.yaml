@@ -41,7 +41,7 @@ jobs:
           name: test-reports
           path: ./back/target/surefire-reports
 
-      - name: SonarCloud Scan
+      - name: SonarCloud Back-end Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
