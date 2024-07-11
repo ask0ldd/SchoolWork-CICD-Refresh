@@ -36,19 +36,20 @@ jobs:
       - name: Run Angular tests
         run: npm run test:ci
 
-      - name: Run Angular coverage
+      - name: Generate Angular Coverage
         run: npm run coverage:ci
 
-      - name: Upload coverage artifact
+      - name: Upload Coverage Artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.node-version }}
           path: ./front/coverage/bobapp/lcov-report
 
-      - name: Build Angular
+      - name: Build Angular Frontend
         run: npm run build --prod
 
-      - name: SonarCloud Scan
+      - name: SonarCloud Front-end Scan
+        if: ${{ matrix.node-version == '20.x' }}
         uses: sonarsource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONT }}
@@ -63,14 +64,16 @@ jobs:
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
 
       - name: Docker Login
+        if: ${{ matrix.node-version == '20.x' }}
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
 
-      - name: Build and Push Docker Image
-        working-directory: ./front
+      - name: Build & Push Docker Image
+        if: ${{ matrix.node-version == '20.x' }}
+        # working-directory: ./front
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
