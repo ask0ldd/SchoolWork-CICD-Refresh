@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    image: askldd/bobappback:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - bobapp-network
+
+  frontend:
+    image: askldd/bobappfront:latest
+    ports:
+      - "4200:80"
+#    environment:
+#      - API_URL=http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - bobapp-network
+
+#  nginx:
+#    image: nginx:latest
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - ./nginx.conf:/etc/nginx/nginx.conf
+#    depends_on:
+#      - backend
+#      - frontend
+#    networks:
+#      - bobapp-network
+
+networks:
+  bobapp-network:
+    name: bobapp-network
+    driver: bridge
