@@ -75,6 +75,7 @@ jobs:
           # "Run Tests & Generate Jacoco Coverage"
           # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
           # lors de l'analyse
+          # save : -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back
             -Dsonar.organization=ask0ldd
@@ -82,7 +83,7 @@ jobs:
             -Dsonar.tests=./back/src/test/java
             -Dsonar.java.binaries=./back/target/classes
             -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
-            -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
+            -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,.git,.github,back/target/**
 
       # authentification auprès de docker
       - name: Docker Login
