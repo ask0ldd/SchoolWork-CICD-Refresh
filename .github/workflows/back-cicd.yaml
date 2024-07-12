@@ -83,7 +83,7 @@ jobs:
             -Dsonar.tests=./back/src/test/java
             -Dsonar.java.binaries=./back/target/classes
             -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
-            -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
+            -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,.git,.github,back/target/**
 
       # authentification auprès de docker
