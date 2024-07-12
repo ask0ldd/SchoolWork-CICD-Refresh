@@ -1,54 +1,80 @@
+# définit le nom du workflow
 name: Spring Back CI/CD
 
+# liste les évènements déclenchant l'exécution du workflow
 on:
   pull_request:
     branches: [main]
   push:
     branches: [dev]
 
+# définition d'un job nommé "test-n-build" s'exécutant au sein d'un environnement
+# dont l'OS est ubuntu dernière version
 jobs:
-  test:
+  test-n-build:
     runs-on: ubuntu-latest
 
+    # définit le répertoire actif par défault
     defaults:
       run:
         working-directory: "./back"
 
+    # checks out le repository en utilisant l'action préexistante actions/checkout@v4
+    # checkout : met le code du repository à disposition du workflow
+    # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      # installe & configure AdoptOpenJDK v17
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "adopt"
 
-      # clean the /target folder
-      # compiles the java source code
-      # convert the compiled code to a jar and put it into /target
-      # copies the packaged JAR or WAR file into the local Maven repository (~/.m2/repository)
+      # vide le repertoire /target de son contenu
+      # compile le code java du projet
+      # converti ce code en un jar, placé dans /target
+      # copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
       - name: Build with Maven
-        run: mvn clean install -DskipTests # so we don't run the tests two times
+        # -DskipTests : permet à mvn clean install d'ignorer son comportement par
+        # défault relatif à l'exécution des tests
+        run: mvn clean install -DskipTests
 
-      # don't need to call mvn jacoco:report since pom xml contains the coverage as a goal
-      - name: Run Tests
+      # exécute les tests & génére le coverage
+      # inutile d'exécuter mvn jacoco:report car le pom xml contient la génération du coverage
+      # en tant que goal
+      - name: Run Tests & Generate Jacoco Coverage
         run: mvn clean test
 
+      # upload des résults du coverage en tant qu'artefact
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
+          # résultats trouvés dans le repertoire suivant après génération
           path: ./back/target/surefire-reports
 
+      # effectue le contrôle de la qualité du code pour le backend
+      # en utilisation la github action sonarsource/sonarcloud-github-action@master
+      # préexistante
       - name: SonarCloud Back-end Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
+          # token permettant au workflow de s'authentifier auprès de sonarcloud
+          # généré via l'interface de sonarcloud & inséré en tant que secret
+          # dans les settings du repository
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
           # -Dsonar.java.binaries=./back/target/classes/com/openclassrooms/bobapp
+          # projectKey : identifiant du projet qui regrupera les résultats de l'analyse
+          # coverage.jacoco.xmlReportPaths : informations liées au coverage générées lors de l'étape
+          # "Run Tests & Generate Jacoco Coverage"
+          # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
+          # lors de l'analyse
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back
             -Dsonar.organization=ask0ldd
@@ -58,15 +84,22 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=./back/target/site/jacoco/jacoco.xml
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
 
+      # authentification auprès de docker
       - name: Docker Login
         env:
+          # utilisation des secrets générés via l'interface de docker
+          # & insérés dans les settings du repository
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
 
+      # build & upload de l'image résultant de certaines des étapes précédentes du workflow
+      # vers docker hub
       - name: Build and Push Docker Image
         env:
+          # utilisation d'un secret généré via l'interface de docker
+          # & insérés dans les settings du repository
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         run: |
           docker build -t $DOCKER_USERNAME/bobappback:latest .
