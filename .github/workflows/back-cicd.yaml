@@ -19,13 +19,15 @@ jobs:
       run:
         working-directory: "./back"
 
-    # checks out le repository en utilisant l'action préexistante actions/checkout@v4
-    # checkout : met le code du repository à disposition du workflow
-    # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
     steps:
+      # ETAPE 1 : CHECKOUT
+      # checks out le repository en utilisant l'action préexistante actions/checkout@v4
+      # checkout : met le code du repository à disposition du workflow
+      # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       # installe & configure AdoptOpenJDK v17
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -33,6 +35,7 @@ jobs:
           java-version: "17"
           distribution: "adopt"
 
+      # ETAPE 3 : BUILD LE BACKEND DE L’APPLICATION AVEC MAVEN
       # vide le repertoire /target de son contenu
       # compile le code java du projet
       # converti ce code en un jar, placé dans /target
@@ -42,13 +45,13 @@ jobs:
         # défault relatif à l'exécution des tests
         run: mvn clean install -DskipTests
 
-      # exécute les tests & génére le coverage
+      # ETAPE 4 : EXECUTE LES TESTS & GENERE LE COVERAGE
       # inutile d'exécuter mvn jacoco:report car le pom xml contient la génération du coverage
       # en tant que goal
       - name: Run Tests & Generate Jacoco Coverage
         run: mvn clean test
 
-      # upload des résults du coverage en tant qu'artefact
+      # ETAPE 5 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
@@ -56,7 +59,7 @@ jobs:
           # résultats trouvés dans le repertoire suivant après génération
           path: ./back/target/surefire-reports
 
-      # effectue le contrôle de la qualité du code pour le backend
+      # ETAPE 6 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
       # en utilisation la github action sonarsource/sonarcloud-github-action@master
       # préexistante
       - name: SonarCloud Back-end Scan
@@ -86,7 +89,7 @@ jobs:
             -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/target/**,back/src/test/**,**/*.spec.ts,**/*.conf.js
             -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,.git,.github,back/target/**
 
-      # authentification auprès de docker
+      # ETAPE 7 : AUTHENTIFICATION AUPRES DE DOCKER
       - name: Docker Login
         env:
           # utilisation des secrets générés via l'interface de docker
@@ -96,8 +99,7 @@ jobs:
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
 
-      # build & upload de l'image résultant de certaines des étapes précédentes du workflow
-      # vers docker hub
+      # ETAPE 8 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Build and Push Docker Image
         env:
           # utilisation d'un secret généré via l'interface de docker
