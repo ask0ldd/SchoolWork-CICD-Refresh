@@ -94,18 +94,21 @@ jobs:
           # "Generate Angular Coverage"
           # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
           # lors de l'analyse
-          # save : -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
           projectBaseDir: ./front
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.inclusions=**/*.ts, **/*.scss, **/*.html
+            -Dsonar.test.inclusions=**/*.spec.ts
             -Dsonar.javascript.lcov.reportPaths=coverage/bobapp/lcov.info
-            -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
+            -Dsonar.coverage.exclusions=.angular/**,node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
             -Dsonar.exclusions=.angular/**,node_modules/**,coverage/**
+            -Dsonar.testExecutionReportPaths=reports/sonarqube_front_report.xml
 
-      - name: List workspace contents
-        run: ls -R ${{ github.workspace }}
+      #- name: List workspace contents
+      #  run: ls -R ${{ github.workspace }}
 
       # ETAPE 8.5 : UPLOAD SONARQUBE REPORT AS ARTIFACT
       - name: Upload SonarQube Report
@@ -113,7 +116,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sonarqube-report
-          path: .scannerwork/report-task.txt
+          # path: ${{ github.workspace }}/.scannerwork/report-task.txt
+          path: ./front/reports/sonarqube_front_report.xml
 
       # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Build and Push
