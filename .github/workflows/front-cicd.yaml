@@ -105,7 +105,7 @@ jobs:
             -Dsonar.exclusions=.angular/**,node_modules/**,coverage/**
 
       - name: List workspace contents
-        run: ls -R ./
+        run: ls -R ${{ github.workspace }}
 
       # ETAPE 8.5 : UPLOAD SONARQUBE REPORT AS ARTIFACT
       - name: Upload SonarQube Report
