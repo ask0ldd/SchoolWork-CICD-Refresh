@@ -119,7 +119,7 @@ jobs:
           path: ./front/reports/sonarqube_front_report.xml
 
       # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
-      - name: Docker Build and Push
+      - name: Docker Image Build & Push to DockerHub
         if: ${{ matrix.node-version == '20.x' }}
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

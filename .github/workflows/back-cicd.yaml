@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
         run: |
-          cd ./back
+          cd back
           mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back \
             -Dsonar.organization=ask0ldd \
@@ -85,7 +85,7 @@ jobs:
             -Dsonar.exclusions=back/target/**
 
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
-      - name: Docker Build and Push
+      - name: Docker Image Build & Push to DockerHub
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
