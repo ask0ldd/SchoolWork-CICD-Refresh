@@ -36,9 +36,9 @@ jobs:
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
-        with:
-          # Shallow clones should be disabled for a better relevancy of analysis
-          fetch-depth: 0
+        # with:
+        # Shallow clones should be disabled for a better relevancy of analysis
+        #fetch-depth: 0
 
       # ETAPE 2 : INSTALLATION DE NODE JS
       # installe node.js sur le serveur assigné au workflow et à "node-version" issue de la matrice

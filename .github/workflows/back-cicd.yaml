@@ -26,6 +26,9 @@ jobs:
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
+        # with:
+        # Shallow clones should be disabled for a better relevancy of analysis ???!!!
+        # fetch-depth: 0
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       # installe & configure AdoptOpenJDK v17
