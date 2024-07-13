@@ -100,7 +100,7 @@ jobs:
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=src
             -Dsonar.tests=src
-            -Dsonar.inclusions=**/*.ts, **/*.scss, **/*.html
+            -Dsonar.inclusions=**/*.ts,**/*.scss,**/*.html
             -Dsonar.test.inclusions=**/*.spec.ts
             -Dsonar.javascript.lcov.reportPaths=coverage/bobapp/lcov.info
             -Dsonar.coverage.exclusions=.angular/**,node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
