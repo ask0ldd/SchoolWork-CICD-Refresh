@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sonarqube-report
-          path: ${{ github.workspace }}/front/.scannerwork/report-task.txt
+          path: ./front/.scannerwork/report-task.txt
 
       # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Build and Push

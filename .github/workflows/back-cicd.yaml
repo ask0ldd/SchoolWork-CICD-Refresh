@@ -58,9 +58,11 @@ jobs:
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          # name: test-reports
           # résultats trouvés dans le repertoire suivant après génération
-          path: ./back/target/surefire-reports
+          # path: ./back/target/surefire-reports
+          name: jacoco-coverage
+          path: ./back/target/site/jacoco
 
       # ETAPE 6 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
       # en utilisation la github action sonarsource/sonarcloud-github-action@master
