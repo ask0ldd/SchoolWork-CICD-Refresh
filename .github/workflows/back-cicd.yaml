@@ -68,29 +68,20 @@ jobs:
       # en utilisation la github action sonarsource/sonarcloud-github-action@master
       # préexistante
       - name: SonarCloud Back-end Scan
-        uses: sonarsource/sonarcloud-github-action@master
         env:
-          # token permettant au workflow de s'authentifier auprès de sonarcloud
-          # généré via l'interface de sonarcloud & inséré en tant que secret
-          # dans les settings du repository
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          # projectKey : identifiant du projet qui regrupera les résultats de l'analyse
-          # coverage.jacoco.xmlReportPaths : informations liées au coverage générées lors de l'étape
-          # "Run Tests & Generate Jacoco Coverage"
-          # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
-          # lors de l'analyse
-          projectBaseDir: ./back
-          args: >
-            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back
-            -Dsonar.organization=ask0ldd
-            -Dsonar.sources=src/main/java
-            -Dsonar.tests=src/test/java
-            -Dsonar.java.binaries=target/classes
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-            -Dsonar.coverage.exclusions=target/**,src/test/**
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
+        run: |
+          cd ./back
+          mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back \
+            -Dsonar.organization=ask0ldd \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.sources=src/main/java \
+            -Dsonar.tests=src/test/java \
+            -Dsonar.java.binaries=target/classes \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.coverage.exclusions=target/**,src/test/** \
             -Dsonar.exclusions=back/target/**
 
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
