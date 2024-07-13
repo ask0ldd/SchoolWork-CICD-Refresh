@@ -72,7 +72,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
         run: |
-          cd back
           mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back \
             -Dsonar.organization=ask0ldd \
@@ -82,7 +81,7 @@ jobs:
             -Dsonar.java.binaries=target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.coverage.exclusions=target/**,src/test/** \
-            -Dsonar.exclusions=back/target/**
+            -Dsonar.exclusions=target/**
 
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
