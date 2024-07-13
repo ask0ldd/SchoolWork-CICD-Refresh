@@ -14,9 +14,9 @@ jobs:
   test-n-build:
     runs-on: ubuntu-latest
 
-    # définit une matrix de stratégie menant à l'exécution du job avec plus
-    # version de node : node 18 & node 20, soit les deux versions LTS de node
-    # qui n'ont pas atteint leur fin de vie
+    # définit une matrix de stratégie menant à l'exécution du job avec
+    # les version de node 18 & 20, soit les deux dernières versions LTS
+    # qui n'ont pas atteint la fin de leur cycle de vie
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -36,6 +36,9 @@ jobs:
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
 
       # ETAPE 2 : INSTALLATION DE NODE JS
       # installe node.js sur le serveur assigné au workflow et à "node-version" issue de la matrice
@@ -53,13 +56,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ETAPE 4 : EXECUTION DES TESTS UNITAIRES / D’INTEGRATION
-      - name: Run Angular tests
-        run: npm run test:ci
-
-      # ETAPE 5 : GENERATION DES DONNEES RELATIVES AU COVERAGE
-      - name: Generate Angular Coverage
-        run: npm run coverage:ci
+      # ETAPE 4 : EXECUTION DES TESTS & GENERATION DU COVERAGE
+      - name: Run Angular tests & generate coverage
+        run: |
+          npm run test:ci
+          npm run coverage:ci
 
       # ETAPE 6 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
       # uploade et met à disposition les artefacts relatifs au coverage pour chaque version
@@ -94,54 +95,32 @@ jobs:
           # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
           # lors de l'analyse
           # save : -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
+          projectBaseDir: ./front
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
             -Dsonar.organization=ask0ldd
-            -Dsonar.sources=./front/src
-            -Dsonar.javascript.lcov.reportPaths=./front/coverage/bobapp/lcov.info
-            -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
-            -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,.git,.github,back/target/**
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=**/*.spec.ts
+            -Dsonar.javascript.lcov.reportPaths=coverage/bobapp/lcov.info
+            -Dsonar.coverage.exclusions=.angular/**,node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
+            -Dsonar.exclusions=.angular/**,node_modules/**,coverage/**
 
-      - name: Generate SonarCloud Report
-        run: |
-          npm install -g sonarqube-scanner
-          sonar-scanner \
-            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front \
-            -Dsonar.organization=ask0ldd \
-            -Dsonar.sources=./front/src \
-            -Dsonar.tests=./front/src \
-            -Dsonar.test.inclusions=**/*.spec.ts \
-            -Dsonar.typescript.lcov.reportPaths=./front/coverage/bobapp/lcov.info \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN_FRONT }}
-
-      - name: Upload SonarCloud report
-        uses: actions/upload-artifact@v3
+      # ETAPE 8.5 : UPLOAD SONARQUBE REPORT AS ARTIFACT
+      - name: Upload SonarQube Report
+        if: ${{ matrix.node-version == '20.x' }}
+        uses: actions/upload-artifact@v4
         with:
-          name: sonarcloud-report
-          path: .scannerwork/report-task.txt
+          name: sonarqube-report
+          path: ${{ github.workspace }}/front/.scannerwork/report-task.txt
 
-      # ETAPE 9 : AUTHENTIFICATION AUPRES DE DOCKER
-      - name: Docker Login
-        # étape uniquement exécutée pour le serveur node 20
+      # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
+      - name: Docker Build and Push
         if: ${{ matrix.node-version == '20.x' }}
         env:
-          # utilisation des secrets générés via l'interface de docker
-          # & insérés dans les settings du repository
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
-
-      # ETAPE 10 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
-      - name: Build & Push Docker Image
-        # étape uniquement exécutée pour le serveur node 20
-        if: ${{ matrix.node-version == '20.x' }}
-        env:
-          # utilisation d'un secret généré via l'interface de docker
-          # & insérés dans les settings du repository
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        # l'image sera accessible via l'identifiant askldd/bobappfront:latest
-        run: |
           docker build -t $DOCKER_USERNAME/bobappfront:latest .
           docker push $DOCKER_USERNAME/bobappfront:latest
