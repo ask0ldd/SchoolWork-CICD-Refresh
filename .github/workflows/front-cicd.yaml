@@ -14,9 +14,9 @@ jobs:
   test-n-build:
     runs-on: ubuntu-latest
 
-    # définit une matrix de stratégie menant à l'exécution du job avec plus
-    # version de node : node 18 & node 20, soit les deux versions LTS de node
-    # qui n'ont pas atteint leur fin de vie
+    # définit une matrix de stratégie menant à l'exécution du job avec
+    # les version de node 18 & 20, soit les deux dernières versions LTS
+    # qui n'ont pas atteint la fin de leur cycle de vie
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -29,13 +29,18 @@ jobs:
       run:
         working-directory: "./front"
 
-    # checks out le repository en utilisant l'action préexistante actions/checkout@v4
-    # checkout : met le code du repository à disposition du workflow
-    # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
     steps:
+      # ETAPE 1 : CHECKOUT
+      # checks out le repository en utilisant l'action préexistante actions/checkout@v4
+      # checkout : met le code du repository à disposition du workflow
+      # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
+        # with:
+        # Shallow clones should be disabled for a better relevancy of analysis
+        #fetch-depth: 0
 
+      # ETAPE 2 : INSTALLATION DE NODE JS
       # installe node.js sur le serveur assigné au workflow et à "node-version" issue de la matrice
       # un serveur installera node 18, l'autre node 20 avant de poursuivre le job
       - name: Use Node.js ${{ matrix.node-version }}
@@ -47,18 +52,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: "./front/package-lock.json"
 
-      # installe les dépendances listées dans le fichier json
+      # ETAPE 3 : INSTALLATION DES DEPENDANCES DU PROJET
       - name: Install dependencies
         run: npm ci
 
-      # exécute les tests unitaires / d'intégration
-      - name: Run Angular tests
-        run: npm run test:ci
+      # ETAPE 4 : EXECUTION DES TESTS & GENERATION DU COVERAGE
+      - name: Run Angular tests & generate coverage
+        run: |
+          npm run test:ci
+          npm run coverage:ci
 
-      # génère le coverage
-      - name: Generate Angular Coverage
-        run: npm run coverage:ci
-
+      # ETAPE 6 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
       # uploade et met à disposition les artefacts relatifs au coverage pour chaque version
       # de node testée
       - name: Upload Coverage Artifact
@@ -67,11 +71,11 @@ jobs:
           name: coverage-report-${{ matrix.node-version }}
           path: ./front/coverage/bobapp/lcov-report
 
-      # build le frontend angular
+      # ETAPE 7 : BUILD DU FRONTEND ANGULAR DE L’APPLICATION
       - name: Build Angular Frontend
         run: npm run build --prod
 
-      # débute l'analyse de la qualité du code à l'aide de sonarcloud
+      # ETAPE 8 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
       - name: SonarCloud Front-end Scan
         # étape uniquement exécutée pour le serveur node 20
         if: ${{ matrix.node-version == '20.x' }}
@@ -90,37 +94,37 @@ jobs:
           # "Generate Angular Coverage"
           # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
           # lors de l'analyse
-          # save : -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
+          projectBaseDir: ./front
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
             -Dsonar.organization=ask0ldd
-            -Dsonar.sources=./front/src
-            -Dsonar.javascript.lcov.reportPaths=./front/coverage/bobapp/lcov.info
-            -Dsonar.coverage.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,front/src/environments/**,.git,.github,back/**,**/*.spec.ts,**/*.conf.js,front/src/test.ts,front/src/main.ts
-            -Dsonar.exclusions=front/.angular/**,front/node_modules/**,front/coverage/**,.git,.github,back/target/**
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.inclusions=**/*.ts,**/*.scss,**/*.html
+            -Dsonar.test.inclusions=**/*.spec.ts
+            -Dsonar.javascript.lcov.reportPaths=coverage/bobapp/lcov.info
+            -Dsonar.coverage.exclusions=.angular/**,node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
+            -Dsonar.exclusions=.angular/**,node_modules/**,coverage/**
 
-      # authentification auprès de docker
-      - name: Docker Login
-        # étape uniquement exécutée pour le serveur node 20
+      #- name: List workspace contents
+      #  run: ls -R ${{ github.workspace }}
+
+      # ETAPE 8.5 : UPLOAD SONARQUBE REPORT AS ARTIFACT
+      - name: Upload SonarQube Report
+        if: ${{ matrix.node-version == '20.x' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonarqube-report
+          # path: ${{ github.workspace }}/.scannerwork/report-task.txt
+          path: ./front/reports/sonarqube_front_report.xml
+
+      # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
+      - name: Docker Image Build & Push to DockerHub
         if: ${{ matrix.node-version == '20.x' }}
         env:
-          # utilisation des secrets générés via l'interface de docker
-          # & insérés dans les settings du repository
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
-
-      # build & upload de l'image résultant de certaines des étapes précédentes du workflow
-      # vers docker hub
-      - name: Build & Push Docker Image
-        # étape uniquement exécutée pour le serveur node 20
-        if: ${{ matrix.node-version == '20.x' }}
-        env:
-          # utilisation d'un secret généré via l'interface de docker
-          # & insérés dans les settings du repository
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        # l'image sera accessible via l'identifiant askldd/bobappfront:latest
-        run: |
           docker build -t $DOCKER_USERNAME/bobappfront:latest .
           docker push $DOCKER_USERNAME/bobappfront:latest
