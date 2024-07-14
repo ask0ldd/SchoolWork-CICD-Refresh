@@ -109,16 +109,25 @@ jobs:
       #- name: List workspace contents
       #  run: ls -R ${{ github.workspace }}
 
-      # ETAPE 8.5 : UPLOAD SONARQUBE REPORT AS ARTIFACT
-      - name: Upload SonarQube Report
-        if: ${{ matrix.node-version == '20.x' }}
+      # ETAPE 9 :
+      - name: Fetch PR comments
+        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments)
+          echo "$comments" > sonar-reports.json
+
+      # ETAPE 10 :
+      - name: Upload comments as artifact
+        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
         uses: actions/upload-artifact@v4
         with:
-          name: sonarqube-report
-          # path: ${{ github.workspace }}/.scannerwork/report-task.txt
-          path: ./front/reports/sonarqube_front_report.xml
+          name: sonar-reports
+          path: sonar-reports.json
 
-      # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
+      # ETAPE 11 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
         if: ${{ matrix.node-version == '20.x' }}
         env:
