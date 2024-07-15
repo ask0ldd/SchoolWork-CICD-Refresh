@@ -8,7 +8,7 @@ on:
   push:
     branches: [dev]
 
-# définition d'un job nommé "test-n-build" s'exécutant au sein d'un environnement
+# définition d'un job nommé "test-n-build" s'exécutant au sein d'un container
 # dont l'OS est ubuntu dernière version
 jobs:
   test-n-build:
@@ -20,15 +20,10 @@ jobs:
         working-directory: "./back"
 
     steps:
-      # ETAPE 1 : CHECKOUT
-      # checks out le repository en utilisant l'action préexistante actions/checkout@v4
-      # checkout : met le code du repository à disposition du workflow
+      # ETAPE 1 : CHECKOUT (utilisation de l'action actions/checkout@v4)
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
-        # with:
-        # Shallow clones should be disabled for a better relevancy of analysis ???!!!
-        # fetch-depth: 0
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       # installe & configure AdoptOpenJDK v17
@@ -39,10 +34,10 @@ jobs:
           distribution: "adopt"
 
       # ETAPE 3 : BUILD LE BACKEND DE L’APPLICATION AVEC MAVEN
-      # vide le repertoire /target de son contenu
-      # compile le code java du projet
-      # converti ce code en un jar, placé dans /target
-      # copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
+      # 1- vide le repertoire /target de son contenu
+      # 2- compile le code java du projet
+      # 3- converti ce code en un jar, placé dans /target
+      # 4- copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
       - name: Build with Maven
         # -DskipTests : permet à mvn clean install d'ignorer son comportement par
         # défault relatif à l'exécution des tests
@@ -54,8 +49,8 @@ jobs:
       - name: Run Tests & Generate Jacoco Coverage
         run: mvn clean test
 
-      # ETAPE 5 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
-      - name: Upload coverage reports
+      # ETAPE 5 : GENERATION & UPLOAD D’UN ARTEFACT CONTENANT CES DONNEES
+      - name: Upload Coverage Artifact
         uses: actions/upload-artifact@v4
         with:
           # name: test-reports
@@ -83,29 +78,6 @@ jobs:
             -Dsonar.coverage.exclusions=target/**,src/test/** \
             -Dsonar.exclusions=target/**
 
-      #   - name: SonarCloud Quality Gate check
-      #     uses: sonarsource/sonarcloud-github-action@master
-      #     if: github.event_name == 'pull_request'
-      #     env:
-      #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
-
-      - name: Fetch PR comments
-        if: github.event_name == 'pull_request'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --jq '.[].body')
-          echo "$comments" > $GITHUB_WORKSPACE/sonar-reports.json
-
-      - name: Upload comments as artifact
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonar-reports
-          path: ${{ github.workspace }}/sonar-reports.json
-
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
         env:
@@ -115,3 +87,37 @@ jobs:
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
           docker build -t $DOCKER_USERNAME/bobappback:latest .
           docker push $DOCKER_USERNAME/bobappback:latest
+
+      # ETAPE 8 : ATTENDS QUE DEUX COMMENTAIRES AIENT ETE ASSOCIES A LA PULL REQUEST
+      - name: Wait for two comments
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          while true
+          do
+            comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments | jq length)
+            if [ $comments -ge 2 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+      # ETAPE 9 : RECUPERATION DE CES COMMENTAIRES CONTENANT LES STATS SONARCUDE
+      - name: Fetch PR comments
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --jq '.[].body')
+          echo "$comments" > $GITHUB_WORKSPACE/sonar-reports.json
+
+      # ETAPE 10 : UPLOAD DE CES STATS SOUS LA FORME D'UN ARTEFACT
+      - name: Upload comments as artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-reports
+          path: ${{ github.workspace }}/sonar-reports.json

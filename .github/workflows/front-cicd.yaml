@@ -8,14 +8,14 @@ on:
   push:
     branches: [dev]
 
-# définition d'un job nommé "test-n-build" s'exécutant au sein d'un environnement
+# définition d'un job nommé "test-n-build" s'exécutant au sein d'un container
 # dont l'OS est ubuntu dernière version
 jobs:
   test-n-build:
     runs-on: ubuntu-latest
 
-    # définit une matrix de stratégie menant à l'exécution du job avec
-    # les version de node 18 & 20, soit les deux dernières versions LTS
+    # définit une matrix de stratégies menant à l'exécution du job avec
+    # les version de node reseignées : ici, les deux dernières versions LTS de node
     # qui n'ont pas atteint la fin de leur cycle de vie
     strategy:
       matrix:
@@ -30,19 +30,13 @@ jobs:
         working-directory: "./front"
 
     steps:
-      # ETAPE 1 : CHECKOUT
-      # checks out le repository en utilisant l'action préexistante actions/checkout@v4
-      # checkout : met le code du repository à disposition du workflow
+      # ETAPE 1 : CHECKOUT (utilisation de l'action actions/checkout@v4)
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
-        # with:
-        # Shallow clones should be disabled for a better relevancy of analysis
-        #fetch-depth: 0
 
       # ETAPE 2 : INSTALLATION DE NODE JS
-      # installe node.js sur le serveur assigné au workflow et à "node-version" issue de la matrice
-      # un serveur installera node 18, l'autre node 20 avant de poursuivre le job
+      # installe node.js sur le container actif
       - name: Use Node.js ${{ matrix.node-version }}
         # utilisation d'une action préexistante
         uses: actions/setup-node@v4
@@ -62,9 +56,7 @@ jobs:
           npm run test:ci
           npm run coverage:ci
 
-      # ETAPE 6 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
-      # uploade et met à disposition les artefacts relatifs au coverage pour chaque version
-      # de node testée
+      # ETAPE 6 : GENERATION & UPLOAD D’UN ARTEFACT CONTENANT CES DONNEES
       - name: Upload Coverage Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -77,7 +69,7 @@ jobs:
 
       # ETAPE 8 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
       - name: SonarCloud Front-end Scan
-        # étape uniquement exécutée pour le serveur node 20
+        # étape uniquement exécutée pour le container contenant node 20
         if: ${{ matrix.node-version == '20.x' }}
         # utilisation d'une action préexistante
         uses: sonarsource/sonarcloud-github-action@master
@@ -109,25 +101,7 @@ jobs:
       #- name: List workspace contents
       #  run: ls -R ${{ github.workspace }}
 
-      # ETAPE 9 :
-      - name: Fetch PR comments
-        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --jq '.[].body')
-          echo "$comments" > $GITHUB_WORKSPACE/sonar-reports.json
-
-      # ETAPE 10 :
-      - name: Upload comments as artifact
-        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonar-reports
-          path: ${{ github.workspace }}/sonar-reports.json
-
-      # ETAPE 11 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
+      # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
         if: ${{ matrix.node-version == '20.x' }}
         env:
@@ -137,3 +111,38 @@ jobs:
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
           docker build -t $DOCKER_USERNAME/bobappfront:latest .
           docker push $DOCKER_USERNAME/bobappfront:latest
+
+      # jq '. | length'
+      # ETAPE 10 : ATTENDS QUE DEUX COMMENTAIRES AIENT ETE ASSOCIES A LA PULL REQUEST
+      - name: Wait for two comments
+        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          while true
+          do
+            comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments | jq length)
+            if [ $comments -ge 2 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+      # ETAPE 11 : RECUPERATION DE CES COMMENTAIRES CONTENANT LES STATS SONARCUDE
+      - name: Fetch PR comments
+        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --jq '.[].body')
+          echo "$comments" > $GITHUB_WORKSPACE/sonar-reports.json
+
+      # ETAPE 12 : UPLOAD DE CES STATS SOUS LA FORME D'UN ARTEFACT
+      - name: Upload comments as artifact
+        if: ${{ github.event_name == 'pull_request' && matrix.node-version == '20.x' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-reports
+          path: ${{ github.workspace }}/sonar-reports.json
