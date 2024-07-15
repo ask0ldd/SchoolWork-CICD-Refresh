@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [dev]
+    branches: [main]
 
 # définition d'un job nommé "test-n-build" s'exécutant au sein d'un container
 # dont l'OS est ubuntu dernière version
@@ -103,7 +103,7 @@ jobs:
 
       # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
-        if: ${{ matrix.node-version == '20.x' }}
+        if: ${{ matrix.node-version == '20.x' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
         # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
