@@ -8,6 +8,8 @@ dist/
 coverage/
 composeversions/
 oldworkflows
+sonar.bat
+**/.scannerwork/
 
 ### STS ###
 .apt_generated
