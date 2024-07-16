@@ -15,8 +15,10 @@
 	<description>L'application de joke par excellence !</description>
 	<properties>
 		<java.version>11</java.version>
+		<sonar.projectKey>ask0ldd_schoolwork-cicd-refresh-back</sonar.projectKey>
+		<sonar.projectName>Schoolwork-Cicd-Refresh-Back</sonar.projectName>
 		<sonar.organization>ask0ldd</sonar.organization>
-  		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 	<dependencies>
 		<dependency>
