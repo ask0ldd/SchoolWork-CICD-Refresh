@@ -55,6 +55,9 @@ jobs:
       # ETAPE 6 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
       - name: SonarCloud Back-end Scan
         env:
+          # token permettant au workflow de s'authentifier auprès de sonarcloud
+          # généré via l'interface de sonarcloud & inséré en tant que secret
+          # dans les settings du repository
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
         run: |
