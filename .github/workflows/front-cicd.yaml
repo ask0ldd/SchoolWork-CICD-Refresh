@@ -8,15 +8,13 @@ on:
   push:
     branches: [main]
 
-# définition d'un job nommé "test-n-build" s'exécutant au sein d'un container
-# dont l'OS est ubuntu dernière version
+# le job s'exécutera dans un container ayant pour OS la dernière version d'Ubuntu
 jobs:
   test-n-build:
     runs-on: ubuntu-latest
 
     # définit une matrix de stratégies menant à l'exécution du job avec
-    # les version de node reseignées : ici, les deux dernières versions LTS de node
-    # qui n'ont pas atteint la fin de leur cycle de vie
+    # les version de node renseignées
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -38,7 +36,6 @@ jobs:
       # ETAPE 2 : INSTALLATION DE NODE JS
       # installe node.js sur le container actif
       - name: Use Node.js ${{ matrix.node-version }}
-        # utilisation d'une action préexistante
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -71,7 +68,6 @@ jobs:
       - name: SonarCloud Front-end Scan
         # étape uniquement exécutée pour le container contenant node 20
         if: ${{ matrix.node-version == '20.x' }}
-        # utilisation d'une action préexistante
         uses: sonarsource/sonarcloud-github-action@master
         env:
           # token permettant au workflow de s'authentifier auprès de sonarcloud
@@ -81,11 +77,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
-          # projectKey : identifiant du projet qui regrupera les résultats de l'analyse
-          # reportPaths : informations liées au coverage générées lors de l'étape
-          # "Generate Angular Coverage"
-          # exclusions : repertoires, sous repertoires, fichiers qui doivent être ignorés
-          # lors de l'analyse
           projectBaseDir: ./front
           args: >
             -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
@@ -104,7 +95,6 @@ jobs:
       # ETAPE 9 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
         if: ${{ matrix.node-version == '20.x' && github.event_name == 'push' && github.ref == 'refs/heads/main'}}
-        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
