@@ -64,7 +64,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
         run: |
           mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back \
+            -Dsonar.projectKey=ask0ldd_bobapp-back-final \
             -Dsonar.organization=ask0ldd \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.sources=src/main/java \

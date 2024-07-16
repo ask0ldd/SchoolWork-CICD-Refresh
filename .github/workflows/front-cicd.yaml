@@ -81,7 +81,7 @@ jobs:
         with:
           projectBaseDir: ./front
           args: >
-            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-front
+            -Dsonar.projectKey=ask0ldd_bobapp-front-final
             -Dsonar.organization=ask0ldd
             -Dsonar.sources=src
             -Dsonar.tests=src
