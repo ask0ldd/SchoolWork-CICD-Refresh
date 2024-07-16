@@ -22,6 +22,8 @@ jobs:
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       - name: Set up JDK
