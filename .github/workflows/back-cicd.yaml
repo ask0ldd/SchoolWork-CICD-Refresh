@@ -24,7 +24,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
-          # fetch-depth: 0 # Fetch all history for all branches and tags
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       - name: Set up JDK
@@ -36,7 +35,7 @@ jobs:
       # ETAPE 3 : BUILD LE BACKEND DE L’APPLICATION AVEC MAVEN
       # 1- vide le repertoire /target de son contenu
       # 2- compile le code java du projet
-      # 3- converti ce code en un jar, placé dans /target
+      # 3- converti ce code en un jar, destination : /target
       # 4- copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
       - name: Build with Maven
         # -DskipTests : build le projet en renonçant à l'exécution des tests
@@ -102,7 +101,7 @@ jobs:
             sleep 10
           done
 
-      # ETAPE 9 : RECUPERATION DE CES COMMENTAIRES CONTENANT LES STATS SONARCUDE
+      # ETAPE 9 : RECUPERATION DE CES COMMENTAIRES CONTENANT LES STATS SONARQUBE
       - name: Fetch PR comments
         if: github.event_name == 'pull_request'
         env:
