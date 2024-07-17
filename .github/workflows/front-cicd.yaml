@@ -91,6 +91,7 @@ jobs:
             -Dsonar.javascript.lcov.reportPaths=coverage/bobapp/lcov.info
             -Dsonar.coverage.exclusions=.angular/**,node_modules/**,coverage/**,src/environments/**,**/*.spec.ts,**/*.conf.js,src/test.ts,src/main.ts
             -Dsonar.exclusions=.angular/**,node_modules/**,coverage/**
+            -Dsonar.qualitygate.wait=true
 
       #- name: List workspace contents
       #  run: ls -R ${{ github.workspace }}
