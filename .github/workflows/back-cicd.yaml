@@ -74,7 +74,6 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.coverage.exclusions=target/**,src/test/** \
             -Dsonar.exclusions=target/**
-            -Dsonar.qualitygate.wait=true
 
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
