@@ -23,7 +23,8 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history for all branches and tags
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          # fetch-depth: 0 # Fetch all history for all branches and tags
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
       - name: Set up JDK
@@ -55,7 +56,7 @@ jobs:
           path: ./back/target/site/jacoco
 
       # ETAPE 6 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
-      - name: SonarCloud Back-end Scan
+      - name: SonarCloud Backend Scan
         env:
           # token permettant au workflow de s'authentifier auprès de sonarcloud
           # généré via l'interface de sonarcloud & inséré en tant que secret
