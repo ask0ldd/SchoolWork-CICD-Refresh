@@ -1,4 +1,3 @@
-# définit le nom du workflow
 name: Spring Back CI/CD
 
 # liste les évènements déclenchant l'exécution du workflow
@@ -6,10 +5,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [dev]
+    branches: [main]
 
-# définition d'un job nommé "test-n-build" s'exécutant au sein d'un environnement
-# dont l'OS est ubuntu dernière version
+# le job s'exécutera dans un container ayant pour OS la dernière version d'Ubuntu
 jobs:
   test-n-build:
     runs-on: ubuntu-latest
@@ -20,18 +18,14 @@ jobs:
         working-directory: "./back"
 
     steps:
-      # ETAPE 1 : CHECKOUT
-      # checks out le repository en utilisant l'action préexistante actions/checkout@v4
-      # checkout : met le code du repository à disposition du workflow
+      # ETAPE 1 : CHECKOUT (utilisation de l'action actions/checkout@v4)
       # i.e : cloning du repository, fetching du dernier commit, authentification git, ...
       - name: Check out repository code
         uses: actions/checkout@v4
-        # with:
-        # Shallow clones should be disabled for a better relevancy of analysis ???!!!
-        # fetch-depth: 0
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       # ETAPE 2 : INSTALLE & CONFIGURE ADOPTOPENJDK v17
-      # installe & configure AdoptOpenJDK v17
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -39,13 +33,12 @@ jobs:
           distribution: "adopt"
 
       # ETAPE 3 : BUILD LE BACKEND DE L’APPLICATION AVEC MAVEN
-      # vide le repertoire /target de son contenu
-      # compile le code java du projet
-      # converti ce code en un jar, placé dans /target
-      # copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
+      # 1- vide le repertoire /target de son contenu
+      # 2- compile le code java du projet
+      # 3- converti ce code en un jar, destination : /target
+      # 4- copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
       - name: Build with Maven
-        # -DskipTests : permet à mvn clean install d'ignorer son comportement par
-        # défault relatif à l'exécution des tests
+        # -DskipTests : build le projet en renonçant à l'exécution des tests
         run: mvn clean install -DskipTests
 
       # ETAPE 4 : EXECUTE LES TESTS & GENERE LE COVERAGE
@@ -54,26 +47,24 @@ jobs:
       - name: Run Tests & Generate Jacoco Coverage
         run: mvn clean test
 
-      # ETAPE 5 : GENERATION D’UN ARTEFACT CONTENANT CES DONNEES
-      - name: Upload coverage reports
+      # ETAPE 5 : GENERATION & UPLOAD D’UN ARTEFACT CONTENANT CES DONNEES
+      - name: Upload Coverage Artifact
         uses: actions/upload-artifact@v4
         with:
-          # name: test-reports
-          # résultats trouvés dans le repertoire suivant après génération
-          # path: ./back/target/surefire-reports
           name: jacoco-coverage
           path: ./back/target/site/jacoco
 
       # ETAPE 6 : ANALYSE DE LA QUALITE DU CODE VIA SONARCLOUD
-      # en utilisation la github action sonarsource/sonarcloud-github-action@master
-      # préexistante
-      - name: SonarCloud Back-end Scan
+      - name: SonarCloud Backend Scan
         env:
+          # token permettant au workflow de s'authentifier auprès de sonarcloud
+          # généré via l'interface de sonarcloud & inséré en tant que secret
+          # dans les settings du repository
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
         run: |
           mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=ask0ldd_schoolwork-cicd-refresh-back \
+            -Dsonar.projectKey=ask0ldd_bobapp-back-final \
             -Dsonar.organization=ask0ldd \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.sources=src/main/java \
@@ -83,15 +74,9 @@ jobs:
             -Dsonar.coverage.exclusions=target/**,src/test/** \
             -Dsonar.exclusions=target/**
 
-      #   - name: SonarCloud Quality Gate check
-      #     uses: sonarsource/sonarcloud-github-action@master
-      #     if: github.event_name == 'pull_request'
-      #     env:
-      #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BACK }}
-
       # ETAPE 7 : BUILD & UPLOAD DE L’IMAGE DOCKER VERS DOCKERHUB
       - name: Docker Image Build & Push to DockerHub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -99,3 +84,37 @@ jobs:
           docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
           docker build -t $DOCKER_USERNAME/bobappback:latest .
           docker push $DOCKER_USERNAME/bobappback:latest
+
+      # ETAPE 8 : ATTENDS QUE DEUX COMMENTAIRES AIENT ETE ASSOCIES A LA PULL REQUEST
+      - name: Wait for two comments
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          while true
+          do
+            comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments | jq length)
+            if [ $comments -ge 2 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+      # ETAPE 9 : RECUPERATION DE CES COMMENTAIRES CONTENANT LES STATS SONARQUBE
+      - name: Fetch PR comments
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          comments=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --jq '.[].body')
+          echo "$comments" > $GITHUB_WORKSPACE/sonar-reports.md
+
+      # ETAPE 10 : UPLOAD DE CES STATS SOUS LA FORME D'UN ARTEFACT
+      - name: Upload comments as artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-reports
+          path: ${{ github.workspace }}/sonar-reports.md

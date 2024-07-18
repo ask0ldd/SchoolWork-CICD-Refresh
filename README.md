@@ -55,3 +55,9 @@ Build the container:
 Start the container:
 
 > docker run -p 8080:8080 --name bobapp-back -d bobapp-back
+
+---
+
+### Docker Compose
+
+you can start both container a the same type executing the "docker-compose up" command from the root folder
