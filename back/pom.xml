@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<sonar.organization>ask0ldd</sonar.organization>
+		<sonar.projectKey>ask0ldd_bobapp-back-final</sonar.projectKey>
 		<sonar.projectName>BobApp-Back-Final</sonar.projectName>
 	</properties>
 	<dependencies>
