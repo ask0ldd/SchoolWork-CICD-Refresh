@@ -16,15 +16,15 @@ Install dependencies:
 
 Launch Front-end:
 
-> npm run start;
+> npm run start
 
-### Docker
+### Docker Frontend Container
 
-Build the container:
+Build the frontend container:
 
 > docker build -t bobapp-front .
 
-Start the container:
+Start the frontend container:
 
 > docker run -p 4200:80 --name bobapp-front -d bobapp-front
 
@@ -46,18 +46,18 @@ Launch the tests:
 
 > mvn clean install
 
-### Docker
+### Backend Docker Container
 
-Build the container:
+Build the backend container:
 
 > docker build -t bobapp-back .
 
-Start the container:
+Start the backend container:
 
 > docker run -p 8080:8080 --name bobapp-back -d bobapp-back
 
 ---
 
-### Docker Compose
+### Docker Compose : Starting both container at the same time
 
 you can start both container a the same type executing the "docker-compose up" command from the root folder
