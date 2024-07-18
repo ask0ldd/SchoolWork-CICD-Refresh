@@ -12,8 +12,6 @@ services:
     image: askldd/bobappfront:latest
     ports:
       - "4200:80"
-#    environment:
-#      - API_URL=http://backend:8080
     depends_on:
       - backend
     networks:
