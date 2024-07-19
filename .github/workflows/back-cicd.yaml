@@ -45,7 +45,7 @@ jobs:
       # inutile d'exécuter mvn jacoco:report car le pom xml contient la génération du coverage
       # en tant que goal
       - name: Run Tests & Generate Jacoco Coverage
-        run: mvn clean test
+        run: mvn test
 
       # ETAPE 5 : GENERATION & UPLOAD D’UN ARTEFACT CONTENANT CES DONNEES
       - name: Upload Coverage Artifact
