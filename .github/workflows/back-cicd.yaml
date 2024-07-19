@@ -32,20 +32,23 @@ jobs:
           java-version: "17"
           distribution: "adopt"
 
-      # ETAPE 3 : BUILD LE BACKEND DE L’APPLICATION AVEC MAVEN
+      # ETAPE 3 : COMPILATION DE L’APPLICATION AVEC MAVEN
       # 1- vide le repertoire /target de son contenu
-      # 2- compile le code java du projet
-      # 3- converti ce code en un jar, destination : /target
-      # 4- copie le package Jar ou War dans le repository Maven local (~/.m2/repository)
-      - name: Build with Maven
-        # -DskipTests : build le projet en renonçant à l'exécution des tests
-        run: mvn clean install -DskipTests
+      # 2- purge toutes les classes compilées, ressources, artefacts
+      # 3- compile le code java du projet
+      - name: App Compilation with Maven
+        run: mvn clean compile
 
       # ETAPE 4 : EXECUTE LES TESTS & GENERE LE COVERAGE
       # inutile d'exécuter mvn jacoco:report car le pom xml contient la génération du coverage
       # en tant que goal
       - name: Run Tests & Generate Jacoco Coverage
         run: mvn test
+
+      # ETAPE 5 :PACKAGING DE L’APPLICATION AVEC MAVEN
+      - name: App Packaging with Maven
+        # -DskipTests : build le projet en renonçant à l'exécution des tests
+        run: mvn package -DskipTests
 
       # ETAPE 5 : GENERATION & UPLOAD D’UN ARTEFACT CONTENANT CES DONNEES
       - name: Upload Coverage Artifact
